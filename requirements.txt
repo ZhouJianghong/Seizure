@@ -1,0 +1,7 @@
+pyedflib
+scipy
+scikit-learn
+GoogleAppEngineCloudStorageClient
+Pillow
+
+
