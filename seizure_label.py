@@ -15,7 +15,8 @@ import scipy
 from sklearn import preprocessing
 from numpy import *
 from scipy import signal
-
+import random
+random.seed(1)
 
 # import matplotlib.pyplot as plt
 # import logging
@@ -101,7 +102,7 @@ def interpolation(proj, B1, B2, B3):
 # xy = numpy.meshgrid(x,y)
 # print(xy)
 k = open("summary.txt")
-
+seizure_data = []
 while k:
     name_summary = k.readline()
     name_summary = name_summary.strip('\n')
@@ -112,7 +113,7 @@ while k:
         break
     s = open(summary)
     s_f = s.readline()
-    seizure_data = []
+
     while s_f:
         # print(s_f)
         f_str = re.findall(r"\d+\.?\d*", s_f)
@@ -123,17 +124,20 @@ while k:
             if not f_num[0] == 0:
                 seizure_get = seizure_log(10)
                 seizure_get.seizureNumber = f_num[0]
+                print(seizure_get.seizureNumber)
                 seizure_get.filename = name_summary
-                # print(f_num[0])
+                #print(f_num[0])
                 for i in range(int(f_num[0])):
                     s_f = s.readline()
                     f_str = re.findall(r"\d+\.?\d*", s_f)
-                    f_num = list(map(float, f_str))
-                    seizure_get.szStart.append(f_num[0])
+                    #f_num = list(map(float, f_str[-1]))
+                    print(f_str[-1])
+                    seizure_get.szStart.append(f_str[-1])
                     s_f = s.readline()
                     f_str = re.findall(r"\d+\.?\d*", s_f)
-                    f_num = list(map(float, f_str))
-                    seizure_get.szEnd.append(f_num[0])
+                    #f_num = list(map(float, f_str[-1]))
+                    print(f_str[-1])
+                    seizure_get.szEnd.append(f_str[-1])
                 seizure_data.append(seizure_get)
         s_f = s.readline()
 
@@ -142,7 +146,9 @@ while k:
 k.close()
 
 # In[29]:
-
+print(len(seizure_data))
+print(seizure_data[0].seizureNumber)
+print(seizure_data[0].filename)
 
 Fz = 256
 # 2 seconds as a sample, so the size of a sample is 512
@@ -150,22 +156,42 @@ Fz = 256
 key = open("RECORDS")
 seizure_key = open("RECORDS-WITH-SEIZURES")
 seizure_keys = seizure_key.readline()
+seizure_keys = seizure_keys.strip('\n')
 seizureNum = -1
 numImage = -1
 proj = numpy.loadtxt('2d.txt')
-la = open("labels.txt",'w')
+la = open("train_labels.txt",'w')
+tx = open("test_labels.txt",'w')
 labels = []
+#stin = 1;
+#counter = 0
 while key:
-    Is_seizure = False
-
     keys = key.readline()
-    if keys is seizure_keys:
+    #keys = 'chb01/chb01_03.edf'
+    keys = keys.strip('\n')
+    if keys=="":
+        break
+    #counter = counter+1
+    #if counter == 2500:
+    #    break
+    #if keys == "":
+    #    break
+    #if seizure_keys == "":
+    #    break
+    Is_seizure = False
+    #stin = 0;
+    
+    print(keys)
+    print(seizure_keys)
+    if keys == seizure_keys:
         Is_seizure = True
         seizureNum = seizureNum + 1
         seizure_keys = seizure_key.readline()
-    position = "gs://seizure/seizure/" + keys
-    filename = keys[6:len(keys) ]
+        seizure_keys = seizure_keys.strip('\n')
+    ##position = "gs://seizure/seizure/" + keys
+    filename = keys[6:len(keys)]
     print(filename)
+    print(Is_seizure)
 
     # In[30]:
 
@@ -178,46 +204,63 @@ while key:
 
 
     # print()
-    subprocess.check_output(["gsutil", "cp", position, "./temp"])
-    cc = "temp/" + filename
-    print(cc)
-    f = pyedflib.EdfReader(cc)
-    subprocess.check_output(["rm", "./temp/" + filename])
-    sigbufs = np.zeros((23, f.getNSamples()[0]))
-    for i in range(23):
-        sigbufs[i, :] = f.readSignal(i)
+    ##subprocess.check_output(["gsutil", "cp", position, "./temp"])
+    cc = "seizure/" + filename
+    ##print(cc)
+    #f = pyedflib.EdfReader(cc)
+    ##subprocess.check_output(["rm", "./temp/" + filename])
+    sigbufs = np.zeros((23, 921600))
+    #for i in range(23):
+    #
+     #   sigbufs[i, :] = signal.detrend(f.readSignal(i))
+        
         # print(sigbufs.shape)
-    f._close()
-    del f
+    #f._close()
+    #del f
 
     # In[41]:
 
 
-    width, height = sigbufs.shape
+    width,height = sigbufs.shape
+    
     # y = sigbufs[:,0:512]
     # print(y.shape)
     Data = []
+    print("Enter.................................")
     for j in range(height / 256):
         numImage = numImage + 1
         x = epochEEG(10)
         signals = sigbufs[:, j * 256:(j + 1) * 256]
+        #if j == 3000:
+        #    break
         label_ofseizure = 0
         if Is_seizure:
-            for numz in range(seizure_data[seizureNum].seizueNumber):
-                if j * 256 >= seizure_data[seizureNum].szStart[numz] and j * 256 <= seizure_data[seizureNum].szEnd[
-                    numz]:
+           # print('seizureNum')
+           
+           # print(seizureNum)
+           # print(seizure_data[seizureNum].seizureNumber)
+            for numz in range(int(seizure_data[seizureNum].seizureNumber)):
+                #print('StartTime:')
+                #print(seizure_data[seizureNum].szStart[numz])
+                #print('GetTime:')
+                #print(j)
+                #print('EndTime:')
+                #print(seizure_data[seizureNum].szEnd[numz])
+                if (j>= int(seizure_data[seizureNum].szStart[numz])) and (j<= int(seizure_data[seizureNum].szEnd[numz])):
                     label_ofseizure = 1
-                if (j + 1) * 256 <= seizure_data[seizureNum].szEnd[numz] and (j + 1) * 256 >= \
-                        seizure_data[seizureNum].szStart[numz]:
-                    label_ofseizure = 1
+                    print('happy')
+                #if (j + 1)  <= seizure_data[seizureNum].szEnd[numz] and (j + 1)  >= \
+                #        seizure_data[seizureNum].szStart[numz]:
+                #    label_ofseizure = 1
+        #if label_ofseizure is 1:
+         #   print('happy')
         labels.append(label_ofseizure)
-        #a = open("labels.txt", 'w')
-        la.write('\n' + str(label_ofseizure))
+        #la.write(str(label_ofseizure)+" ")
         # print(signals.shape)
-        #B1 = numpy.zeros((1, 23))
-        #B2 = numpy.zeros((1, 23))
-        #B3 = numpy.zeros((1, 23))
-        #for i in range(sigbufs.shape[0]):
+       # B1 = numpy.zeros((1, 23))
+       # B2 = numpy.zeros((1, 23))
+       # B3 = numpy.zeros((1, 23))
+       # for i in range(sigbufs.shape[0]):
             # print(signals[i,:].shape)
             # print(i)
         #    signals1 = signal.detrend(signals[i, :])
@@ -240,15 +283,23 @@ while key:
         #x.Biggroup = filename
         #Data.append(x)
         # print(x.signals.shape)
-        #ImageName = str(numImage)
+       # ImageName = str(numImage)
         # sklearn.preprocessing.normalize(epoachImage)
-        #imsave("./temp/" + ImageName + ".png", epoachImage * 255)
+        tx_la = random.random()
+        #print(label_ofseizure)
+        if tx_la<0.7:
+          #  imsave("./train/" + ImageName + ".png", epoachImage * 255)
+            la.write(str(label_ofseizure)+" ")
+        if tx_la>=0.7:
+          #  imsave("./validate/" + ImageName + ".png", epoachImage * 255)
+            tx.write(str(label_ofseizure)+" ")
         #subprocess.check_output(["gsutil", "cp", "./temp/" + ImageName + ".png", "gs://seizure/images/"])
         #print("rm" + "./temp/" + ImageName + ".png")
         #subprocess.check_output(["rm", "temp/" + ImageName + ".png"])
         # In[ ]:
-
 la.close()
+tx.close()
+     
 
 
 

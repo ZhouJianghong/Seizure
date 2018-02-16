@@ -160,8 +160,8 @@ seizure_keys = seizure_keys.strip('\n')
 seizureNum = -1
 numImage = -1
 proj = numpy.loadtxt('2d.txt')
-la = open("labels_train.txt",'w')
-tx = open("labels_test.txt",'w')
+la = open("train_labels.txt",'w')
+tx = open("test_labels.txt",'w')
 labels = []
 #stin = 1;
 #counter = 0
@@ -233,16 +233,16 @@ while key:
             print(seizureNum)
             print(seizure_data[seizureNum].seizureNumber)
             for numz in range(int(seizure_data[seizureNum].seizureNumber)):
-                if j  >= seizure_data[seizureNum].szStart[numz] and j  <= seizure_data[seizureNum].szEnd[
-                    numz]:
+                if j  >= int(seizure_data[seizureNum].szStart[numz]) and j <= int(seizure_data[seizureNum].szEnd[
+                    numz]):
                     label_ofseizure = 1
-                if (j + 1)  <= seizure_data[seizureNum].szEnd[numz] and (j + 1)  >= \
-                        seizure_data[seizureNum].szStart[numz]:
-                    label_ofseizure = 1
+               # if (j + 1)  <= seizure_data[seizureNum].szEnd[numz] and (j + 1)  >= \
+               #         seizure_data[seizureNum].szStart[numz]:
+               #     label_ofseizure = 1
         if label_ofseizure is 1:
             print(1)
         labels.append(label_ofseizure)
-        
+        #la.write(str(label_ofseizure)+" ")
         # print(signals.shape)
         B1 = numpy.zeros((1, 23))
         B2 = numpy.zeros((1, 23))
@@ -271,21 +271,21 @@ while key:
         Data.append(x)
         # print(x.signals.shape)
         ImageName = str(numImage)
-        
         # sklearn.preprocessing.normalize(epoachImage)
-        tr_va = random.random()
-        if tr_va<0.7:
+        tx_la = random.random()
+        if tx_la<0.7:
             imsave("./train/" + ImageName + ".png", epoachImage * 255)
-            la.write(str(label_ofseizure)+" ")
-        if tr_va>=0.7:
+            la.write("./train/" +ImageName + ".png"+" "+str(label_ofseizure)+"\n")
+        if tx_la>=0.7:
             imsave("./validate/" + ImageName + ".png", epoachImage * 255)
-            tx.write(str(label_ofseizure)+" ")
+            tx.write("./validate/" +ImageName + ".png"+" "+str(label_ofseizure)+" ")
         #subprocess.check_output(["gsutil", "cp", "./temp/" + ImageName + ".png", "gs://seizure/images/"])
         #print("rm" + "./temp/" + ImageName + ".png")
         #subprocess.check_output(["rm", "temp/" + ImageName + ".png"])
         # In[ ]:
 la.close()
 tx.close()
+     
 
 
 
